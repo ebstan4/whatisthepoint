@@ -4,8 +4,6 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>What do you think the point is?</title>
-
-<!-- Minimal, elegant styles -->
 <style>
   :root{--maxw:740px}
   html,body{height:100%;margin:0;background:#fff;color:#111;font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial;}
@@ -62,7 +60,7 @@
     </div>
   </div>
 
-  <!-- Firebase SDK (compat libs keep setup simple) -->
+  <!-- Firebase compat CDN (works in plain HTML pages) -->
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
 
@@ -79,10 +77,10 @@
   };
   // ================================
 
-  // initialize (compat)
+  // initialize firebase (compat)
   firebase.initializeApp(firebaseConfig);
 
-  // basic XSS escaping
+  // small helper
   function escapeHtml(s){
     return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').trim();
   }
@@ -98,7 +96,6 @@
   const selectedBox = document.getElementById('selectedBox');
   const selectedList = document.getElementById('selectedList');
 
-  // push message to DB
   async function pushMessage(name, text, mayPublish){
     const data = {
       name: escapeHtml(name).substring(0,50) || 'anonymous',
@@ -109,11 +106,9 @@
     return messagesRef.push(data);
   }
 
-  // client-side simple heuristics to prevent obvious spam (not a security barrier)
   function simpleCheck(text){
     if(!text || !text.trim()) return 'empty';
     if(text.length > 700) return 'too_long';
-    // block long runs of punctuation / uppercase spam
     if(/[!?.]{40,}/.test(text)) return 'spam';
     return null;
   }
@@ -132,7 +127,6 @@
       await pushMessage(name, text, may);
       elMsg.value = '';
       elMay.checked = false;
-      // optional tiny acknowledgement
       elSend.textContent = 'Noted';
       setTimeout(()=> elSend.textContent = 'Send', 1200);
     }catch(e){
@@ -143,7 +137,6 @@
     }
   });
 
-  // show last 80 messages (live)
   messagesRef.limitToLast(80).on('value', snap=>{
     const obj = snap.val() || {};
     const items = Object.entries(obj).sort((a,b)=>a[1].t - b[1].t);
@@ -151,7 +144,6 @@
       const date = new Date(v.t).toLocaleString();
       return `<div class="msg"><div class="meta"><strong>${v.name}</strong> • ${date}</div><div>${v.text}</div></div>`;
     }).join('');
-    // extract selected (mayPublish true) and show top 10
     const selected = items.filter(([,v])=>v.mayPublish).slice(-10);
     if(selected.length){
       selectedBox.style.display = 'block';
