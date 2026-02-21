@@ -3,65 +3,213 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>What do you think the point is?</title>
+<title>what do you think the point is?</title>
+
 <style>
-  :root{--maxw:740px}
-  html,body{height:100%;margin:0;background:#fff;color:#111;font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial;}
-  .wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:36px;}
-  .card{max-width:var(--maxw);width:100%;text-align:center;padding:30px 22px}
-  h1{font-size:clamp(20px,4vw,36px);margin:0 0 18px;font-weight:600;letter-spacing:-0.02em}
-  form{display:flex;gap:10px;justify-content:center;align-items:flex-start;flex-wrap:wrap;margin-top:18px}
-  input[type="text"]{flex:0 1 220px;padding:10px;border:1px solid #e6e6e6;border-radius:8px;font-size:15px}
-  textarea{flex:1 1 380px;padding:12px;border:1px solid #e6e6e6;border-radius:8px;font-size:15px;min-height:72px;resize:vertical}
-  .controls{width:100%;display:flex;gap:10px;align-items:center;justify-content:center;margin-top:8px}
-  .btn{background:#111;color:#fff;border:0;padding:10px 14px;border-radius:8px;font-weight:600;cursor:pointer}
-  .small{font-size:13px;color:#666;margin-top:12px}
-  .muted{color:#999;font-size:12px;margin-top:8px}
-  .selected-box{margin-top:28px;padding:12px;border-radius:8px;background:#fafafa;border:1px solid #f0f0f0;max-width:720px;margin-left:auto;margin-right:auto}
-  .meta{font-size:13px;color:#666;margin-bottom:6px}
-  .tiny{font-size:12px;color:#999}
-  label.inline{display:inline-flex;gap:8px;align-items:center;cursor:pointer}
-  @media (max-width:520px){ textarea{min-height:90px} input[type="text"]{flex-basis:100%} .controls{flex-direction:column} }
+  /* global: web1.0 y2k feel */
+  html,body{
+    height:100%;
+    margin:0;
+    font-family: "Times New Roman", Times, serif;
+    background:
+      /* subtle retro grid + paper */
+      linear-gradient(180deg, #f6f8ff 0%, #f0f4ff 50%, #eef2ff 100%),
+      repeating-linear-gradient(45deg, rgba(0,0,0,0.02) 0 1px, transparent 1px 24px);
+    color:#111;
+    -webkit-font-smoothing:antialiased;
+    text-rendering:optimizeLegibility;
+    /* force lowercase everywhere */
+    text-transform: lowercase;
+  }
+
+  /* centered white panel width ~3/5 of viewport */
+  .frame {
+    min-height:100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:48px 18px;
+  }
+  .panel {
+    width:60vw; /* 3/5 of the screen */
+    min-width:320px;
+    max-width:960px;
+    background: #ffffff;
+    border: 6px solid #000; /* chunky old-school border */
+    padding:28px 32px;
+    box-shadow:
+      8px 8px 0 0 rgba(0,0,0,0.06),
+      -6px -6px 0 0 rgba(255,255,255,0.6) inset;
+  }
+
+  h1{
+    margin:0 0 18px;
+    font-size: clamp(20px, 3.5vw, 40px);
+    text-align:center;
+    letter-spacing: -0.01em;
+  }
+
+  form {
+    display:flex;
+    gap:12px;
+    align-items:flex-start;
+    justify-content:flex-start;
+    flex-wrap:wrap;
+    margin-top:14px;
+  }
+
+  .username {
+    flex: 0 0 28%;
+    min-width:150px;
+  }
+
+  .username input{
+    width:100%;
+    box-sizing:border-box;
+    padding:10px 8px;
+    font-family: "Times New Roman", Times, serif;
+    font-size:15px;
+    border:3px inset #ddd;
+    background:#fffbe6;
+    outline:none;
+  }
+
+  .message {
+    flex: 1 1 66%;
+    min-width:220px;
+  }
+
+  textarea#message{
+    width:100%;
+    min-height:90px;
+    padding:12px 10px;
+    font-family:"Times New Roman", Times, serif;
+    resize:vertical;
+    border:3px inset #ddd;
+    background:#fffdf5;
+    font-size:15px;
+    line-height:1.25;
+  }
+
+  .controls {
+    width:100%;
+    display:flex;
+    align-items:center;
+    gap:12px;
+    margin-top:10px;
+  }
+
+  .checkbox-label{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    cursor:pointer;
+    font-size:14px;
+    color:#222;
+  }
+
+  /* retro checkbox look */
+  input[type="checkbox"]{
+    width:16px;
+    height:16px;
+    margin:0;
+    accent-color:#222;
+    transform:translateY(-1px);
+  }
+
+  button#send{
+    background:#000;
+    color:#fff;
+    border:none;
+    padding:8px 14px;
+    font-weight:700;
+    font-family:"Times New Roman", Times, serif;
+    cursor:pointer;
+    border-radius:4px;
+    box-shadow: 2px 2px 0 rgba(0,0,0,0.2);
+  }
+
+  .note{
+    margin-top:12px;
+    font-size:13px;
+    color:#666;
+  }
+
+  .selected-box {
+    margin-top:26px;
+    padding:14px;
+    border-radius:6px;
+    background:#fbfbfb;
+    border:2px solid #e0e0e0;
+  }
+
+  .selected-title{
+    text-align:center;
+    font-weight:700;
+    margin-bottom:8px;
+  }
+
+  .selected-item{
+    padding:10px 6px;
+    border-top:1px dashed #e7e7e7;
+    font-size:15px;
+  }
+
+  .meta { color:#666; font-size:13px; margin-bottom:6px; }
+
+  /* make the tiny UI elements feel retro (lowercase, small) */
+  ::placeholder { color:#9a9a9a; opacity:1; font-style:italic; }
+  label, input, textarea, button { text-transform:lowercase; }
+
+  @media (max-width:720px){
+    .panel { width:92vw; padding:18px; }
+    .username { flex-basis:100%; }
+    .message { flex-basis:100%; }
+    form { gap:8px; }
+  }
 </style>
 </head>
 <body>
-  <div class="wrap">
-    <div class="card" role="main">
-      <h1>What do you think the point is?</h1>
+  <div class="frame">
+    <main class="panel" role="main" aria-labelledby="title">
+      <h1 id="title">what do you think the point is?</h1>
 
       <form id="form" onsubmit="return false;" aria-label="submit response">
-        <input id="name" type="text" placeholder="name (optional)" maxlength="50" autocomplete="off"/>
-        <textarea id="message" placeholder="your message" maxlength="700" required></textarea>
+        <div class="username">
+          <input id="username" type="text" placeholder="username (optional)" maxlength="50" autocomplete="off" />
+        </div>
 
-        <div class="controls" style="margin-top:12px">
-          <label class="inline">
+        <div class="message">
+          <textarea id="message" placeholder="your message" maxlength="700" required></textarea>
+        </div>
+
+        <div class="controls" style="justify-content:flex-start">
+          <label class="checkbox-label" id="checkboxLabel">
             <input id="mayPublish" type="checkbox" />
-            <span>🦝 A raccoon says it's okay if you publish this</span>
+            <span id="checkboxText">🦝 a raccoon says it's okay if you publish this</span>
           </label>
 
-          <button id="send" class="btn" type="button">Send</button>
+          <button id="send" type="button">send</button>
         </div>
       </form>
 
-      <div class="small">No signup. No tracking. Submissions go to a private inbox and only curated replies are shown below.</div>
+      <div class="note">no signup. no tracking. submissions go to a private inbox and only curated replies are shown below.</div>
+      <div class="note" style="margin-top:6px">if you'd like to be invisible: use a throwaway username.</div>
 
-      <div class="muted tiny" style="margin-top:18px">If you'd like to be invisible: use a throwaway name. We remove messages that break the rules.</div>
-
-      <!-- curated selected list (only this is public) -->
+      <!-- curated public area (only 'selected' node appears) -->
       <div class="selected-box" id="selectedBox" style="display:none;">
-        <strong>Selected responses</strong>
+        <div class="selected-title">selected responses</div>
         <div id="selectedList"></div>
       </div>
-
-    </div>
+    </main>
   </div>
 
-  <!-- Firebase compat CDN (works in plain HTML pages) -->
+  <!-- firebase compat -->
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
 
   <script>
-  // ===== YOUR FIREBASE CONFIG =====
+  // ===== FIREBASE CONFIG - keep your config here (already used previously) =====
   const firebaseConfig = {
     apiKey: "AIzaSyCI8mpFl8YlS5DiN-hBmQ82SMwKW_-s-a8",
     authDomain: "whatisthepoint-bf1c4.firebaseapp.com",
@@ -71,36 +219,37 @@
     messagingSenderId: "846595538481",
     appId: "1:846595538481:web:2bfd56678a51e67f075f10"
   };
-  // ================================
+  // =============================================================================
 
-  // initialize firebase (compat)
+  // init firebase
   firebase.initializeApp(firebaseConfig);
-
-  // helpers & refs
-  function escapeHtml(s){
-    return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').trim();
-  }
-
   const db = firebase.database();
-  const messagesRef = db.ref('messages');   // all submissions (private inbox)
-  const selectedRef = db.ref('selected');   // curated public items
+  const messagesRef = db.ref('messages'); // private inbox
+  const selectedRef = db.ref('selected'); // curated public
 
-  const elName = document.getElementById('name');
-  const elMsg = document.getElementById('message');
-  const elSend = document.getElementById('send');
-  const elMay = document.getElementById('mayPublish');
+  // ui
+  const usernameEl = document.getElementById('username');
+  const messageEl  = document.getElementById('message');
+  const sendBtn     = document.getElementById('send');
+  const mayPublish  = document.getElementById('mayPublish');
+  const checkboxText = document.getElementById('checkboxText');
   const selectedBox = document.getElementById('selectedBox');
   const selectedList = document.getElementById('selectedList');
 
-  // store submission only
-  async function pushMessage(name, text, mayPublish){
-    const data = {
-      name: escapeHtml(name).substring(0,50) || 'anonymous',
-      text: escapeHtml(text).substring(0,700),
-      mayPublish: !!mayPublish,
-      t: Date.now()
-    };
-    return messagesRef.push(data);
+  // dynamic checkbox text in lowercase
+  function updateCheckboxText(){
+    if(mayPublish.checked){
+      checkboxText.textContent = "i'm okay if this gets chosen to be shown publicly";
+    } else {
+      checkboxText.textContent = "🦝 a raccoon says it's okay if you publish this";
+    }
+  }
+  mayPublish.addEventListener('change', updateCheckboxText);
+  updateCheckboxText();
+
+  // small helper
+  function escapeHtml(s){
+    return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').trim();
   }
 
   function simpleCheck(text){
@@ -110,32 +259,42 @@
     return null;
   }
 
-  elSend.addEventListener('click', async ()=>{
-    const name = elName.value;
-    const text = elMsg.value;
-    const may = elMay.checked;
+  async function pushMessage(name, text, may){
+    const data = {
+      name: escapeHtml(name).substring(0,50) || 'anonymous',
+      text: escapeHtml(text).substring(0,700),
+      mayPublish: !!may,
+      t: Date.now()
+    };
+    return messagesRef.push(data);
+  }
+
+  sendBtn.addEventListener('click', async ()=>{
+    const name = usernameEl.value;
+    const text = messageEl.value;
+    const may = mayPublish.checked;
     const ck = simpleCheck(text);
     if(ck){
-      alert({empty:'Type a message', too_long:'Message too long', spam:'Please be less spammy'}[ck] || 'Invalid');
+      alert({empty:'type a message', too_long:'message too long', spam:'please be less spammy'}[ck] || 'invalid');
       return;
     }
-    elSend.disabled = true;
+    sendBtn.disabled = true;
     try{
       await pushMessage(name, text, may);
-      elMsg.value = '';
-      elMay.checked = false;
-      // subtle confirmation text for user
-      elSend.textContent = 'Noted';
-      setTimeout(()=> elSend.textContent = 'Send', 1200);
+      messageEl.value = '';
+      mayPublish.checked = false;
+      updateCheckboxText();
+      sendBtn.textContent = 'noted';
+      setTimeout(()=> sendBtn.textContent = 'send', 1000);
     }catch(e){
       console.error(e);
-      alert('Send failed — try again');
-    } finally {
-      elSend.disabled = false;
+      alert('send failed — try again');
+    }finally{
+      sendBtn.disabled = false;
     }
   });
 
-  // ONLY read & show curated items from `selected/`
+  // only read curated items
   selectedRef.on('value', snap=>{
     const obj = snap.val() || {};
     const items = Object.entries(obj).sort((a,b)=>a[1].t - b[1].t);
@@ -145,7 +304,7 @@
       selectedList.innerHTML = items.map(([k,v])=>{
         const date = v.t ? new Date(v.t).toLocaleString() : '';
         return `
-          <div style="padding:12px 0;border-bottom:1px dashed #f7f7f7">
+          <div class="selected-item">
             <div class="meta"><strong>${v.name}</strong>${date ? ' • ' + date : ''}</div>
             <div>${v.text}</div>
           </div>
