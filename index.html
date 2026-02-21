@@ -7,20 +7,18 @@
 
 <style>
   /* global: web1.0 y2k feel */
-html,body{
-  height:100%;
-  margin:0;
-  font-family: "Times New Roman", Times, serif;
-
-  background-image: url("AoWXgnHSxAAPxqymPQMQYL-1200-80.jpg");
-  background-size: cover;        /* fills screen */
-  background-position: center;   /* keeps earth centered */
-  background-attachment: fixed;  /* subtle parallax */
-  background-repeat: no-repeat;
-
-  color:#111;
-  text-transform: lowercase;
-}
+  html,body{
+    height:100%;
+    margin:0;
+    font-family: "Times New Roman", Times, serif;
+    background-image: url("AoWXgnHSxAAPxqymPQMQYL-1200-80.jpg");
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+    background-repeat: no-repeat;
+    color:#111;
+    text-transform: lowercase;
+  }
 
   /* centered white panel width ~3/5 of viewport */
   .frame {
@@ -30,37 +28,35 @@ html,body{
     justify-content:center;
     padding:48px 18px;
   }
-.panel {
-  width:60vw;
-  min-width:320px;
-  max-width:960px;
-  background: rgba(255,255,255,0.95); /* slightly translucent */
-  border: 6px solid #000;
-  padding:28px 32px;
-  box-shadow:
-    0 0 30px rgba(0,0,0,0.6),
-    8px 8px 0 rgba(0,0,0,0.2);
-}
+  .panel {
+    width:60vw;
+    min-width:320px;
+    max-width:960px;
+    background: rgba(255,255,255,0.95);
+    border: 6px solid #000;
+    padding:28px 32px;
+    box-shadow:
+      0 0 30px rgba(0,0,0,0.6),
+      8px 8px 0 rgba(0,0,0,0.2);
+  }
 
   h1{
-    margin:0 0 18px;
+    margin:0 0 12px;
     font-size: clamp(20px, 3.5vw, 40px);
     text-align:center;
     letter-spacing: -0.01em;
   }
 
+  /* VERTICAL form layout */
   form {
     display:flex;
+    flex-direction:column;
     gap:12px;
-    align-items:flex-start;
-    justify-content:flex-start;
-    flex-wrap:wrap;
     margin-top:14px;
   }
 
   .username {
-    flex: 0 0 28%;
-    min-width:150px;
+    width:100%;
   }
 
   .username input{
@@ -75,13 +71,12 @@ html,body{
   }
 
   .message {
-    flex: 1 1 66%;
-    min-width:220px;
+    width:100%;
   }
 
   textarea#message{
     width:100%;
-    min-height:90px;
+    min-height:120px;
     padding:12px 10px;
     font-family:"Times New Roman", Times, serif;
     resize:vertical;
@@ -96,7 +91,7 @@ html,body{
     display:flex;
     align-items:center;
     gap:12px;
-    margin-top:10px;
+    margin-top:6px;
   }
 
   .checkbox-label{
@@ -108,7 +103,6 @@ html,body{
     color:#222;
   }
 
-  /* retro checkbox look */
   input[type="checkbox"]{
     width:16px;
     height:16px;
@@ -129,12 +123,7 @@ html,body{
     box-shadow: 2px 2px 0 rgba(0,0,0,0.2);
   }
 
-  .note{
-    margin-top:12px;
-    font-size:13px;
-    color:#666;
-  }
-
+  /* minimal: only things on page */
   .selected-box {
     margin-top:26px;
     padding:14px;
@@ -157,7 +146,7 @@ html,body{
 
   .meta { color:#666; font-size:13px; margin-bottom:6px; }
 
-  /* confirmation box after submit */
+  /* after submit confirmation */
   #afterSubmit {
     margin-top:20px;
     text-align:center;
@@ -175,15 +164,21 @@ html,body{
     font-weight:700;
   }
 
-  /* make the tiny UI elements feel retro (lowercase, small) */
+  /* footer established date */
+  .established {
+    margin-top:18px;
+    text-align:center;
+    font-size:13px;
+    color:#444;
+  }
+
+  /* placeholders, lowercase enforcement */
   ::placeholder { color:#9a9a9a; opacity:1; font-style:italic; }
   label, input, textarea, button { text-transform:lowercase; }
 
   @media (max-width:720px){
     .panel { width:92vw; padding:18px; }
-    .username { flex-basis:100%; }
-    .message { flex-basis:100%; }
-    form { gap:8px; }
+    form { gap:10px; }
   }
 </style>
 </head>
@@ -191,23 +186,20 @@ html,body{
   <div class="frame">
     <main class="panel" role="main" aria-labelledby="title">
       <h1 id="title">what do you think the point is?</h1>
-      <div style="text-align:center; font-size:14px; margin-bottom:10px;">
-  last updated: 03.21.2002
-</div>
 
       <form id="form" onsubmit="return false;" aria-label="submit response">
         <div class="username">
-          <input id="username" type="text" placeholder="username (optional)" maxlength="50" autocomplete="off" />
+          <input id="username" type="text" placeholder="username" maxlength="50" autocomplete="off" />
         </div>
 
         <div class="message">
           <textarea id="message" placeholder="your message" maxlength="700" required></textarea>
         </div>
 
-        <div class="controls" style="justify-content:flex-start">
-          <label class="checkbox-label" id="checkboxLabel">
+        <div class="controls">
+          <label class="checkbox-label">
             <input id="mayPublish" type="checkbox" />
-            <span id="checkboxText">🦝 a raccoon says it's okay if you publish this</span>
+            <span id="checkboxText">i am okay with having my message be public</span>
           </label>
 
           <button id="send" type="button">send</button>
@@ -220,14 +212,13 @@ html,body{
         <p style="margin-top:12px;"><span id="submitAgain" class="linkish">submit another thought</span></p>
       </div>
 
-      <div class="note">no signup. no tracking. submissions go to a private inbox and only curated replies are shown below.</div>
-      <div class="note" style="margin-top:6px">if you'd like to be invisible: use a throwaway username.</div>
-
       <!-- curated public area (only 'selected' node appears) -->
       <div class="selected-box" id="selectedBox" style="display:none;">
         <div class="selected-title">selected responses</div>
         <div id="selectedList"></div>
       </div>
+
+      <div class="established">established: feb 21, 2026 (america)</div>
     </main>
   </div>
 
@@ -266,16 +257,9 @@ html,body{
   const afterSubmit = document.getElementById('afterSubmit');
   const submitAgain = document.getElementById('submitAgain');
 
-  // dynamic checkbox text in lowercase
-  function updateCheckboxText(){
-    if(mayPublish.checked){
-      checkboxText.textContent = "i'm okay if this gets chosen to be shown publicly";
-    } else {
-      checkboxText.textContent = "🦝 a raccoon says it's okay if you publish this";
-    }
-  }
+  // checkbox text (already static but kept for possible future changes)
+  function updateCheckboxText(){ /* placeholder if you want dynamic text later */ }
   mayPublish.addEventListener('change', updateCheckboxText);
-  updateCheckboxText();
 
   // small helper
   function escapeHtml(s){
@@ -311,7 +295,6 @@ html,body{
     messageEl.value = '';
     usernameEl.value = '';
     mayPublish.checked = false;
-    updateCheckboxText();
     sendBtn.textContent = 'send';
   }
 
@@ -329,8 +312,6 @@ html,body{
       await pushMessage(name, text, may);
       // show the after-submit confirmation and hide the form
       showAfterSubmit();
-      // subtle feedback on the button if the user has slow connection and comes back
-      sendBtn.textContent = 'noted';
     }catch(e){
       console.error(e);
       alert('send failed — try again');
