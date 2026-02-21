@@ -65,7 +65,7 @@
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
 
   <script>
-  // ===== YOUR FIREBASE CONFIG =====
+  // ========== PASTE YOUR FIREBASE CONFIG BELOW (already filled if you used previous file) ==========
   const firebaseConfig = {
     apiKey: "AIzaSyCI8mpFl8YlS5DiN-hBmQ82SMwKW_-s-a8",
     authDomain: "whatisthepoint-bf1c4.firebaseapp.com",
@@ -75,18 +75,19 @@
     messagingSenderId: "846595538481",
     appId: "1:846595538481:web:2bfd56678a51e67f075f10"
   };
-  // ================================
+  // ================================================================================================
 
   // initialize firebase (compat)
   firebase.initializeApp(firebaseConfig);
 
-  // small helper
+  // helpers & refs
   function escapeHtml(s){
     return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').trim();
   }
 
   const db = firebase.database();
-  const messagesRef = db.ref('messages');
+  const messagesRef = db.ref('messages');   // all submissions (private inbox)
+  const selectedRef = db.ref('selected');   // curated public items
 
   const elName = document.getElementById('name');
   const elMsg = document.getElementById('message');
@@ -96,6 +97,7 @@
   const selectedBox = document.getElementById('selectedBox');
   const selectedList = document.getElementById('selectedList');
 
+  // store submission
   async function pushMessage(name, text, mayPublish){
     const data = {
       name: escapeHtml(name).substring(0,50) || 'anonymous',
@@ -106,6 +108,7 @@
     return messagesRef.push(data);
   }
 
+  // basic client check
   function simpleCheck(text){
     if(!text || !text.trim()) return 'empty';
     if(text.length > 700) return 'too_long';
@@ -113,6 +116,7 @@
     return null;
   }
 
+  // Send behaviour: store in messages (private) only
   elSend.addEventListener('click', async ()=>{
     const name = elName.value;
     const text = elMsg.value;
@@ -137,22 +141,34 @@
     }
   });
 
-  messagesRef.limitToLast(80).on('value', snap=>{
+  // Do NOT show the messages inbox publicly.
+  // OPTIONAL: show a small "Your message was received" list for the submitter only (currently not used).
+  // (We keep the messagesRef in DB for your manual curation.)
+
+  // Show only curated items from `selected/`
+  selectedRef.on('value', snap=>{
     const obj = snap.val() || {};
     const items = Object.entries(obj).sort((a,b)=>a[1].t - b[1].t);
-    elList.innerHTML = items.map(([k,v])=>{
-      const date = new Date(v.t).toLocaleString();
-      return `<div class="msg"><div class="meta"><strong>${v.name}</strong> • ${date}</div><div>${v.text}</div></div>`;
-    }).join('');
-    const selected = items.filter(([,v])=>v.mayPublish).slice(-10);
-    if(selected.length){
+
+    if(items.length){
       selectedBox.style.display = 'block';
-      selectedList.innerHTML = selected.map(([,v])=>`<div style="padding:8px 0;border-bottom:1px dashed #f7f7f7"><div class="meta"><strong>${v.name}</strong></div><div>${v.text}</div></div>`).join('');
+      selectedList.innerHTML = items.map(([k,v])=>{
+        const date = v.t ? new Date(v.t).toLocaleString() : '';
+        return `
+          <div style="padding:12px 0;border-bottom:1px dashed #f7f7f7">
+            <div class="meta"><strong>${v.name}</strong>${date ? ' • ' + date : ''}</div>
+            <div>${v.text}</div>
+          </div>
+        `;
+      }).join('');
     } else {
       selectedBox.style.display = 'none';
       selectedList.innerHTML = '';
     }
   });
+
+  // (Optional) small UI convenience: show a tiny "recent submissions accepted" preview in the console for you:
+  // messagesRef.limitToLast(5).on('value', s => console.debug('recent private messages snapshot', s.val()));
   </script>
 </body>
 </html>
