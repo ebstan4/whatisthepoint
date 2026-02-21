@@ -12,7 +12,7 @@ html,body{
   margin:0;
   font-family: "Times New Roman", Times, serif;
 
-  background-image: url("photograph-showing-view-earth-from-space-against-dark-background-blue-tones-with-stars_1046450-12163.avif");
+  background-image: url("AoWXgnHSxAAPxqymPQMQYL-1200-80.jpg");
   background-size: cover;        /* fills screen */
   background-position: center;   /* keeps earth centered */
   background-attachment: fixed;  /* subtle parallax */
@@ -157,6 +157,24 @@ html,body{
 
   .meta { color:#666; font-size:13px; margin-bottom:6px; }
 
+  /* confirmation box after submit */
+  #afterSubmit {
+    margin-top:20px;
+    text-align:center;
+    padding:12px;
+    border:2px solid #e7e7e7;
+    background:#fffdf8;
+    font-size:15px;
+  }
+  #afterSubmit p { margin:6px 0; color:#333; }
+
+  .linkish {
+    color:#000;
+    text-decoration:underline;
+    cursor:pointer;
+    font-weight:700;
+  }
+
   /* make the tiny UI elements feel retro (lowercase, small) */
   ::placeholder { color:#9a9a9a; opacity:1; font-style:italic; }
   label, input, textarea, button { text-transform:lowercase; }
@@ -195,6 +213,12 @@ html,body{
           <button id="send" type="button">send</button>
         </div>
       </form>
+
+      <div id="afterSubmit" style="display:none;">
+        <p>your message has been received.</p>
+        <p style="color:#555">it may or may not be chosen.</p>
+        <p style="margin-top:12px;"><span id="submitAgain" class="linkish">submit another thought</span></p>
+      </div>
 
       <div class="note">no signup. no tracking. submissions go to a private inbox and only curated replies are shown below.</div>
       <div class="note" style="margin-top:6px">if you'd like to be invisible: use a throwaway username.</div>
@@ -238,6 +262,9 @@ html,body{
   const checkboxText = document.getElementById('checkboxText');
   const selectedBox = document.getElementById('selectedBox');
   const selectedList = document.getElementById('selectedList');
+  const formEl = document.getElementById('form');
+  const afterSubmit = document.getElementById('afterSubmit');
+  const submitAgain = document.getElementById('submitAgain');
 
   // dynamic checkbox text in lowercase
   function updateCheckboxText(){
@@ -272,6 +299,22 @@ html,body{
     return messagesRef.push(data);
   }
 
+  function showAfterSubmit(){
+    formEl.style.display = 'none';
+    afterSubmit.style.display = 'block';
+  }
+
+  function restoreForm(){
+    afterSubmit.style.display = 'none';
+    formEl.style.display = 'flex';
+    // reset small bits
+    messageEl.value = '';
+    usernameEl.value = '';
+    mayPublish.checked = false;
+    updateCheckboxText();
+    sendBtn.textContent = 'send';
+  }
+
   sendBtn.addEventListener('click', async ()=>{
     const name = usernameEl.value;
     const text = messageEl.value;
@@ -284,17 +327,22 @@ html,body{
     sendBtn.disabled = true;
     try{
       await pushMessage(name, text, may);
-      messageEl.value = '';
-      mayPublish.checked = false;
-      updateCheckboxText();
+      // show the after-submit confirmation and hide the form
+      showAfterSubmit();
+      // subtle feedback on the button if the user has slow connection and comes back
       sendBtn.textContent = 'noted';
-      setTimeout(()=> sendBtn.textContent = 'send', 1000);
     }catch(e){
       console.error(e);
       alert('send failed — try again');
     }finally{
       sendBtn.disabled = false;
     }
+  });
+
+  // allow people to submit again without a full page reload
+  submitAgain.addEventListener('click', (e)=>{
+    e.preventDefault();
+    restoreForm();
   });
 
   // only read curated items
