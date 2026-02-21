@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>What do you think the point is?</title>
+
+<!-- Minimal, elegant styles -->
+<style>
+  :root{--maxw:740px}
+  html,body{height:100%;margin:0;background:#fff;color:#111;font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial;}
+  .wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:36px;}
+  .card{max-width:var(--maxw);width:100%;text-align:center;padding:30px 22px}
+  h1{font-size:clamp(20px,4vw,36px);margin:0 0 18px;font-weight:600;letter-spacing:-0.02em}
+  form{display:flex;gap:10px;justify-content:center;align-items:flex-start;flex-wrap:wrap;margin-top:18px}
+  input[type="text"]{flex:0 1 220px;padding:10px;border:1px solid #e6e6e6;border-radius:8px;font-size:15px}
+  textarea{flex:1 1 380px;padding:12px;border:1px solid #e6e6e6;border-radius:8px;font-size:15px;min-height:72px;resize:vertical}
+  .controls{width:100%;display:flex;gap:10px;align-items:center;justify-content:center;margin-top:8px}
+  .btn{background:#111;color:#fff;border:0;padding:10px 14px;border-radius:8px;font-weight:600;cursor:pointer}
+  .small{font-size:13px;color:#666;margin-top:12px}
+  .list{margin-top:28px;text-align:left;border-top:1px solid #f1f1f1;padding-top:18px}
+  .msg{padding:12px 0;border-bottom:1px dashed #f7f7f7}
+  .meta{font-size:13px;color:#666;margin-bottom:6px}
+  .animal{display:inline-flex;align-items:center;gap:8px;font-size:14px;color:#444}
+  label.inline{display:inline-flex;gap:8px;align-items:center;cursor:pointer}
+  .muted{color:#999;font-size:12px;margin-top:8px}
+  .selected-box{margin-top:18px;padding:12px;border-radius:8px;background:#fafafa;border:1px solid #f0f0f0}
+  .tiny{font-size:12px;color:#999}
+  a.domain{color:inherit;text-decoration:underline;font-weight:600}
+  @media (max-width:520px){ textarea{min-height:90px} input[type="text"]{flex-basis:100%} .controls{flex-direction:column} }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card" role="main">
+      <h1>What do you think the point is?</h1>
+
+      <form id="form" onsubmit="return false;" aria-label="submit response">
+        <input id="name" type="text" placeholder="name (optional)" maxlength="50" autocomplete="off"/>
+        <textarea id="message" placeholder="your message" maxlength="700" required></textarea>
+
+        <div class="controls">
+          <label class="inline animal">
+            <input id="mayPublish" type="checkbox" />
+            <span>🦝 A raccoon says it's okay if you publish this</span>
+          </label>
+
+          <button id="send" class="btn" type="button">Send</button>
+        </div>
+      </form>
+
+      <div class="small">No signup. No tracking. Submissions may be curated and published.</div>
+
+      <div id="messages" class="list" aria-live="polite"></div>
+
+      <div class="muted tiny">If you'd like to be invisible: use a throwaway name. We remove messages that break the rules.</div>
+
+      <div class="selected-box" id="selectedBox" style="display:none;">
+        <strong>Selected responses</strong>
+        <div id="selectedList"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Firebase SDK (compat libs keep setup simple) -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+
+  <script>
+  // ========== PASTE YOUR FIREBASE CONFIG OBJECT HERE ==========
+  const firebaseConfig = {
+    apiKey: "YOUR_API_KEY",
+    authDomain: "YOUR_PROJECT.firebaseapp.com",
+    databaseURL: "https://YOUR_PROJECT-default-rtdb.firebaseio.com",
+    projectId: "YOUR_PROJECT",
+    storageBucket: "YOUR_PROJECT.appspot.com",
+    messagingSenderId: "SENDER_ID",
+    appId: "APP_ID"
+  };
+  // ==========================================================
+
+  // basic XSS escaping
+  function escapeHtml(s){
+    return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').trim();
+  }
+
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.database();
+  const messagesRef = db.ref('messages');
+
+  const elName = document.getElementById('name');
+  const elMsg = document.getElementById('message');
+  const elSend = document.getElementById('send');
+  const elList = document.getElementById('messages');
+  const elMay = document.getElementById('mayPublish');
+  const selectedBox = document.getElementById('selectedBox');
+  const selectedList = document.getElementById('selectedList');
+
+  // push message to DB
+  async function pushMessage(name, text, mayPublish){
+    const data = {
+      name: escapeHtml(name).substring(0,50) || 'anonymous',
+      text: escapeHtml(text).substring(0,700),
+      mayPublish: !!mayPublish,
+      t: Date.now()
+    };
+    return messagesRef.push(data);
+  }
+
+  // client-side simple heuristics to prevent obvious spam (not a security barrier)
+  function simpleCheck(text){
+    if(!text || !text.trim()) return 'empty';
+    if(text.length > 700) return 'too_long';
+    // block long runs of punctuation / uppercase spam
+    if(/[!?.]{40,}/.test(text)) return 'spam';
+    return null;
+  }
+
+  elSend.addEventListener('click', async ()=>{
+    const name = elName.value;
+    const text = elMsg.value;
+    const may = elMay.checked;
+    const ck = simpleCheck(text);
+    if(ck){
+      alert({empty:'Type a message', too_long:'Message too long', spam:'Please be less spammy'}[ck] || 'Invalid');
+      return;
+    }
+    elSend.disabled = true;
+    try{
+      await pushMessage(name, text, may);
+      elMsg.value = '';
+      elMay.checked = false;
+      // optional tiny acknowledgement
+      elSend.textContent = 'Noted';
+      setTimeout(()=> elSend.textContent = 'Send', 1200);
+    }catch(e){
+      console.error(e);
+      alert('Send failed — try again');
+    } finally {
+      elSend.disabled = false;
+    }
+  });
+
+  // show last 80 messages (live)
+  messagesRef.limitToLast(80).on('value', snap=>{
+    const obj = snap.val() || {};
+    const items = Object.entries(obj).sort((a,b)=>a[1].t - b[1].t);
+    elList.innerHTML = items.map(([k,v])=>{
+      const date = new Date(v.t).toLocaleString();
+      return `<div class="msg"><div class="meta"><strong>${v.name}</strong> • ${date}</div><div>${v.text}</div></div>`;
+    }).join('');
+    // extract selected (mayPublish true) and show top 10
+    const selected = items.filter(([,v])=>v.mayPublish).slice(-10);
+    if(selected.length){
+      selectedBox.style.display = 'block';
+      selectedList.innerHTML = selected.map(([,v])=>`<div style="padding:8px 0;border-bottom:1px dashed #f7f7f7"><div class="meta"><strong>${v.name}</strong></div><div>${v.text}</div></div>`).join('');
+    } else {
+      selectedBox.style.display = 'none';
+      selectedList.innerHTML = '';
+    }
+  });
+  </script>
+</body>
+</html>
