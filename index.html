@@ -11,6 +11,7 @@
     height:100%;
     margin:0;
     font-family: "Times New Roman", Times, serif;
+    /* default local fallback background (used if NASA fetch fails or before it loads) */
     background-image: url("AoWXgnHSxAAPxqymPQMQYL-1200-80.jpg");
     background-size: cover;
     background-position: center;
@@ -172,6 +173,22 @@
     color:#444;
   }
 
+  /* credit badge for NASA image (small, unobtrusive) */
+  #nasaCredit {
+    position: fixed;
+    left: 10px;
+    bottom: 8px;
+    background: rgba(0,0,0,0.45);
+    color: #fff;
+    padding: 6px 8px;
+    font-size: 12px;
+    border-radius: 4px;
+    text-decoration: none;
+    z-index: 9999;
+    backdrop-filter: blur(2px);
+  }
+  #nasaCredit:hover { opacity: 0.95; }
+
   /* placeholders, lowercase enforcement */
   ::placeholder { color:#9a9a9a; opacity:1; font-style:italic; }
   label, input, textarea, button { text-transform:lowercase; }
@@ -179,6 +196,7 @@
   @media (max-width:720px){
     .panel { width:92vw; padding:18px; }
     form { gap:10px; }
+    #nasaCredit { left:6px; right:6px; font-size:11px; text-align:center; }
   }
 </style>
 </head>
@@ -221,6 +239,9 @@
       <div class="established">Online Since: Feb 21, 2026, 2:34 AM (Made in California)</div>
     </main>
   </div>
+
+  <!-- small credit anchor (populated by script) -->
+  <a id="nasaCredit" href="#" target="_blank" rel="noopener noreferrer" style="display:none;"></a>
 
   <!-- firebase compat -->
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
@@ -347,6 +368,142 @@
       selectedList.innerHTML = '';
     }
   });
+
+  /****************************************************************
+   * NASA random background integration (with caching & fallback)
+   ****************************************************************/
+
+  (function(){
+    const CACHE_KEY = 'nasa_bg_cache_v1';
+    const CACHE_TTL_MS = 1000 * 60 * 60 * 6; // 6 hours
+
+    // helper: safe JSON parse
+    function tryParse(s){
+      try { return JSON.parse(s); } catch(e){ return null; }
+    }
+
+    // choose a large image from the asset list
+    function chooseBestImageFromAssets(assets){
+      // filter for images only
+      const imgs = assets.filter(a => a.href && /\.(jpe?g|png|webp)$/i.test(a.href));
+      if(!imgs.length) return null;
+      // prefer files that include 'orig' or 'large' in the url if present
+      let preferred = imgs.find(i => /orig|large|hi-res|hi_res|hires/i.test(i.href));
+      if(preferred) return preferred.href;
+      // otherwise take the last (usually the biggest)
+      return imgs[imgs.length - 1].href;
+    }
+
+    // fetch random nasa image metadata and url
+    async function fetchRandomNasaImage(){
+      // Build a search query biased to beautiful space imagery
+      const query = encodeURIComponent('nebula OR galaxy OR "deep field" OR nebula OR "hubble" OR "jwst" OR "planet"');
+      // pick a random page between 1..5 to increase variance (API uses pages of results)
+      const page = Math.floor(Math.random()*5) + 1;
+      const searchUrl = `https://images-api.nasa.gov/search?q=${query}&media_type=image&page=${page}`;
+
+      const s = await fetch(searchUrl);
+      if(!s.ok) throw new Error('search failed');
+      const sj = await s.json();
+      const items = sj.collection && sj.collection.items ? sj.collection.items : [];
+      if(!items.length) throw new Error('no results');
+
+      // pick random item
+      const item = items[Math.floor(Math.random()*items.length)];
+      const data = item.data && item.data[0] ? item.data[0] : null;
+      if(!data || !data.nasa_id) throw new Error('no nasa id');
+
+      // fetch asset list which contains actual image file links
+      const assetUrl = `https://images-api.nasa.gov/asset/${encodeURIComponent(data.nasa_id)}`;
+      const a = await fetch(assetUrl);
+      if(!a.ok) throw new Error('asset fetch failed');
+      const aj = await a.json();
+      const assets = aj.collection && aj.collection.items ? aj.collection.items : [];
+      const imageUrl = chooseBestImageFromAssets(assets);
+      if(!imageUrl) throw new Error('no suitable image');
+
+      // construct credits and link
+      const title = data.title || 'nasa image';
+      const center = data.center || 'NASA';
+      const nasaViewUrl = (item.links && item.links[0] && item.links[0].href) ? item.links[0].href : `https://images.nasa.gov/details-${encodeURIComponent(data.nasa_id)}`;
+
+      return { imageUrl, title, center, nasaViewUrl, nasa_id: data.nasa_id };
+    }
+
+    function cacheSet(obj){
+      try {
+        const record = { v: obj, t: Date.now() };
+        localStorage.setItem(CACHE_KEY, JSON.stringify(record));
+      } catch(e){}
+    }
+    function cacheGet(){
+      try {
+        const raw = localStorage.getItem(CACHE_KEY);
+        const parsed = tryParse(raw);
+        if(!parsed || !parsed.v || !parsed.t) return null;
+        if(Date.now() - parsed.t > CACHE_TTL_MS) return null;
+        return parsed.v;
+      } catch(e){ return null; }
+    }
+
+    // preload and apply background
+    function applyBackground(imageUrl){
+      const img = new Image();
+      img.crossOrigin = "anonymous";
+      img.onload = () => {
+        // set on html element (so background covers whole page)
+        document.documentElement.style.backgroundImage = `url("${imageUrl}")`;
+        document.documentElement.style.backgroundSize = 'cover';
+        document.documentElement.style.backgroundPosition = 'center';
+        document.documentElement.style.backgroundAttachment = 'fixed';
+      };
+      img.onerror = () => { /* keep default fallback */ };
+      img.src = imageUrl;
+    }
+
+    // show credit badge
+    function showCredit(meta){
+      const badge = document.getElementById('nasaCredit');
+      if(!badge) return;
+      if(!meta || !meta.title) { badge.style.display = 'none'; return; }
+      badge.textContent = `${meta.title} — ${meta.center || 'NASA'}`;
+      badge.href = meta.nasaViewUrl || '#';
+      badge.target = '_blank';
+      badge.style.display = 'inline-block';
+    }
+
+    async function initBackground(){
+      try {
+        const cached = cacheGet();
+        if(cached){
+          applyBackground(cached.imageUrl);
+          showCredit(cached);
+          return;
+        }
+
+        // otherwise fetch a random image
+        const meta = await fetchRandomNasaImage();
+        if(meta && meta.imageUrl){
+          cacheSet(meta);
+          applyBackground(meta.imageUrl);
+          showCredit(meta);
+          return;
+        }
+      } catch(err){
+        console.warn('nasa bg error', err);
+        // fallback is the local image already in CSS
+      }
+    }
+
+    // start (do not block other scripts)
+    window.addEventListener('load', () => {
+      initBackground();
+    });
+  })();
+
+  /****************************************************************
+   * end NASA background integration
+   ****************************************************************/
 
   </script>
 </body>
